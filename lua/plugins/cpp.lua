@@ -1,47 +1,63 @@
-local function find_executable(environment_variable, command)
-  local configured = vim.env[environment_variable]
-  if configured and configured ~= "" then
-    return vim.fs.normalize(configured)
-  end
-
-  local detected = vim.fn.exepath(command)
-  if detected ~= "" then
-    return vim.fs.normalize(detected)
-  end
-end
-
-local clangd = find_executable("NVIM_CLANGD_PATH", "clangd")
-local cxx = find_executable("NVIM_CXX", "g++")
-local clangd_options = {}
-
--- PATH에서 clangd를 찾으면 시스템 설치본을 사용하고, 찾지 못하면
--- LazyVim/Mason의 기본 clangd 설치 및 설정에 맡긴다.
-if clangd then
-  clangd_options.cmd = { clangd }
-  clangd_options.mason = false
-  if cxx then
-    table.insert(clangd_options.cmd, "--query-driver=" .. cxx)
-  end
+-- C++ 개발 환경: clangd LSP + 빠른 컴파일/실행 키맵
+local cxx = vim.env.NVIM_CXX
+if not cxx or cxx == "" then
+  cxx = "g++"
 end
 
 return {
-  { import = "lazyvim.plugins.extras.lang.clangd" },
-
+  -- 단일 파일 컴파일 & 실행 (PS용)
   {
-    "mason-org/mason.nvim",
+    "folke/which-key.nvim",
     opts = {
-      ensure_installed = {
-        "clang-format",
-        "codelldb",
+      spec = {
+        { "<leader>r", group = "run", icon = "▶" },
       },
     },
   },
 
+  -- 키맵: 컴파일 및 실행
   {
-    "neovim/nvim-lspconfig",
-    opts = {
-      servers = {
-        clangd = clangd_options,
+    "folke/which-key.nvim",
+    keys = {
+      {
+        "<leader>rb",
+        function()
+          local file = vim.fn.expand("%:p")
+          local out = vim.fn.expand("%:p:r") .. ".exe"
+          vim.cmd("w")
+          vim.cmd(
+            "terminal "
+              .. vim.fn.shellescape(cxx)
+              .. ' -std=c++17 -O2 -Wall -Wextra -DLOCAL -o "'
+              .. out
+              .. '" "'
+              .. file
+              .. '" && echo [Build OK] || echo [Build FAILED]'
+          )
+        end,
+        desc = "Build C++ (g++)",
+        ft = "cpp",
+      },
+      {
+        "<leader>rr",
+        function()
+          local file = vim.fn.expand("%:p")
+          local out = vim.fn.expand("%:p:r") .. ".exe"
+          vim.cmd("w")
+          vim.cmd(
+            "terminal "
+              .. vim.fn.shellescape(cxx)
+              .. ' -std=c++17 -O2 -Wall -DLOCAL -o "'
+              .. out
+              .. '" "'
+              .. file
+              .. '" && "'
+              .. out
+              .. '"'
+          )
+        end,
+        desc = "Build & Run C++",
+        ft = "cpp",
       },
     },
   },

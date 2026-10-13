@@ -1,21 +1,22 @@
--- Options are automatically loaded before lazy.nvim startup
--- Default options that are always set: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/options.lua
--- Add any additional options here
+-- CP 친화 옵션 (LazyVim 기본값 위에 덮어쓰기)
+local opt = vim.opt
 
-vim.opt.clipboard = "unnamedplus"
+vim.g.autoformat = true
 
-vim.g.clipboard = {
-  name = "OSC52",
-  copy = {
-    ["+"] = require("vim.ui.clipboard.osc52").copy("+"),
-    ["*"] = require("vim.ui.clipboard.osc52").copy("*"),
-  },
-}
+opt.tabstop = 2
+opt.shiftwidth = 2
+opt.expandtab = true
+opt.scrolloff = 8
+opt.sidescrolloff = 8
+opt.clipboard = "unnamedplus"
 
-vim.filetype.add({
-  extension = {
-    xacro = "xml",
-    urdf = "xml",
-    sdf = "xml",
-  },
+-- C/C++ 파일을 열 때 자동 설정
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = { "c", "cpp" },
+  callback = function()
+    vim.bo.tabstop = 2
+    vim.bo.shiftwidth = 2
+    vim.bo.expandtab = true
+    vim.bo.commentstring = "// %s"
+  end,
 })

@@ -2,6 +2,32 @@
 
 [LazyVim](https://github.com/LazyVim/LazyVim) 기반 Neovim 설정이다. 저장소를 클론한 뒤 Codex에게 적용을 요청하면 기존 설정을 백업하고, 플러그인 설치와 기본 검증까지 진행할 수 있도록 구성되어 있다.
 
+## 새 Windows 환경 한 번에 설치
+
+Windows 10/11의 새 환경에서는 저장소를 내려받은 뒤 루트의 `setup.cmd`를 실행한다. Git이 아직 없다면 GitHub의 **Code → Download ZIP**으로 받은 뒤 압축을 풀어 실행해도 된다.
+
+```bat
+setup.cmd
+```
+
+`setup.cmd`는 다음 작업을 순서대로 수행하며, 이미 설치된 항목은 건너뛴다.
+
+1. `winget` 확인
+2. PowerShell 7, Git, Neovim, MSYS2, AutoHotkey 설치
+3. MSYS2 UCRT64용 gcc/g++, clangd, clang-format 설치
+4. `C:\msys64\ucrt64\bin`을 사용자 PATH에 추가
+5. 기존 Neovim 설정을 백업하고 이 저장소를 `%LOCALAPPDATA%\nvim`에 Junction으로 연결
+6. LazyVim 플러그인 동기화
+7. Caps Lock → Esc 스크립트를 시작프로그램에 등록하고 실행
+
+패키지 설치 중 Windows 권한 확인 창이 표시될 수 있다. 완료 후 새 PowerShell 7 터미널을 열면 변경된 PATH가 적용된다. 설치 상태만 다시 검사하려면 다음 명령을 사용한다.
+
+```bat
+setup.cmd --check
+```
+
+설정은 Junction으로 연결되므로 설치 후에도 압축을 푼 폴더 또는 클론한 저장소를 이동하거나 삭제하지 않는다. `winget`이 없다면 Microsoft Store에서 **앱 설치 관리자(App Installer)**를 설치한 뒤 다시 실행한다. 브라우저 확장인 Competitive Companion은 자동 설치 대상이 아니므로 사용하는 브라우저에 별도로 설치한다.
+
 ## Codex로 적용하기
 
 ### 1. 저장소 클론
@@ -71,14 +97,14 @@ bash ./scripts/install.sh --mode link
 
 ## 요구 사항
 
-- Windows PowerShell 또는 Linux/macOS 셸
-- Neovim: 현재 `v0.12.4`에서 사용 및 확인됨
+- Windows에서는 PowerShell 7 권장(현재 `7.6.6`), Linux/macOS에서는 POSIX 셸
+- Neovim: 현재 `v0.11.6`에서 사용 및 확인됨
 - Git: `lazy.nvim`과 플러그인 다운로드에 필요
 - Nerd Font 계열 글꼴: 아이콘 표시를 위해 권장
-- C++ 기능 사용 시 `g++` 또는 호환 컴파일러
+- C 기능 사용 시 `gcc`, C++ 기능 사용 시 `g++` 또는 호환 컴파일러
 - 외부 LLVM 설치본을 사용하려면 `clangd`
 
-`clang-format`과 `codelldb`는 Mason이 자동으로 설치한다. `clangd`가 `PATH`에 있으면 해당 설치본을 사용하고, 없으면 LazyVim과 Mason의 기본 설정을 사용한다.
+`clang-format`은 Mason이 자동으로 설치한다. `clangd`가 `PATH`에 있으면 해당 설치본을 사용하고, 없으면 LazyVim과 Mason의 기본 설정을 사용한다.
 
 ## 사용자별 경로 설정
 
@@ -89,7 +115,6 @@ Windows PowerShell에서는 다음과 같이 사용자 환경 변수를 설정�
 ```powershell
 [Environment]::SetEnvironmentVariable("NVIM_CLANGD_PATH", "C:\Program Files\LLVM\bin\clangd.exe", "User")
 [Environment]::SetEnvironmentVariable("NVIM_CXX", "C:\msys64\ucrt64\bin\g++.exe", "User")
-[Environment]::SetEnvironmentVariable("NVIM_PS_ROOT", "C:\Users\<사용자>\proj\ps", "User")
 ```
 
 환경 변수를 설정한 뒤 새 터미널에서 Neovim을 실행한다.
@@ -97,21 +122,63 @@ Windows PowerShell에서는 다음과 같이 사용자 환경 변수를 설정�
 Linux/macOS에서는 셸 설정 파일에 같은 이름의 환경 변수를 `export`한다.
 
 - `NVIM_CLANGD_PATH`: 사용할 `clangd` 실행 파일
-- `NVIM_CXX`: clangd의 query driver 및 CompetiTest 컴파일러
-- `NVIM_PS_ROOT`: Competitive Companion 자동 수신을 활성화할 작업 디렉터리
-
-`NVIM_PS_ROOT`를 지정하지 않으면 `~/proj/ps`를 사용한다.
+- `NVIM_CXX`: clangd의 query driver, C++ 빌드 키맵 및 CompetiTest 컴파일러
 
 ## 주요 구성
 
 - `lazy.nvim` 기반 플러그인 관리
 - VS Code 색상 테마
-- `clangd`, `clang-format`, `codelldb` 기반 C/C++ 개발 환경
-- CompetiTest 테스트 실행 및 Competitive Companion 연동
-- AtCoder 자동 완성 스니펫
-- OSC 52 기반 클립보드 복사
+- `clangd`, `clang-format` 기반 C/C++ 개발 환경
+- CompetiTest 테스트 실행 및 Competitive Companion 상시 수신
+- C/C++ 사용자 스니펫
+- 저장 시 C/C++ 자동 포매팅 및 FlightUI 체인 포매터
 
-Competitive Companion은 Neovim의 현재 작업 디렉터리가 `NVIM_PS_ROOT`와 같을 때 기본 포트 `27121`에서 자동으로 대기한다. 여러 Neovim 인스턴스를 열어도 하나의 인스턴스만 수신 서버를 실행한다.
+Competitive Companion은 Neovim 시작 시 기본 포트 `27121`에서 수신을 시작하며, 받은 문제와 대회는 현재 작업 디렉터리 아래에 생성한다.
+
+## ICPC 문제 풀이
+
+### Neovim에서 테스트하기
+
+문제 파일이 `main.cpp`라면 테스트 입력과 정답은 각각 `main_input1.txt`, `main_output1.txt` 형태로 저장한다.
+
+- `<leader>ra`: 테스트 케이스 추가
+- `<leader>re`: 테스트 케이스 편집
+- `<leader>rt`: GNU++20으로 컴파일하고 모든 테스트 실행
+- `<leader>rs`: 마지막 테스트 결과 다시 열기
+
+Competitive Companion 브라우저 확장으로 문제를 전송하면 소스 파일과 테스트 케이스가 자동으로 만들어진다. C++ 소스는 [`templates/cp_template.cpp`](templates/cp_template.cpp)를 사용한다.
+
+### PowerShell에서 입력과 출력 연결하기
+
+[`scripts/run-cpp.ps1`](scripts/run-cpp.ps1)은 `g++`로 소스를 컴파일하고 입력 파일을 표준 입력으로 전달한다.
+
+```powershell
+$runCpp = "$env:LOCALAPPDATA\nvim\scripts\run-cpp.ps1"
+
+# 터미널에서 직접 입력하고 결과 보기
+& $runCpp .\main.cpp
+
+# input.txt를 입력으로 사용하고 터미널에서 결과 보기
+& $runCpp .\main.cpp -InputPath .\input.txt
+
+# input.txt를 넣고 실제 출력을 output.txt에 저장
+& $runCpp .\main.cpp -InputPath .\input.txt -OutputPath .\output.txt
+```
+
+컴파일러는 먼저 `NVIM_CXX` 환경 변수를 확인하고, 지정하지 않았으면 PATH의 `g++`를 사용한다.
+
+## Windows 키 리매핑
+
+[`scripts/vim.ahk`](scripts/vim.ahk)는 Windows 시작프로그램에서 사용하는 AutoHotkey v1/v2 호환 스크립트다.
+
+- `Caps Lock`을 `Esc`로 사용
+
+`setup.cmd`를 사용하면 AutoHotkey 설치와 시작프로그램 등록이 자동으로 처리된다. 수동으로 설치하려면 다음과 같이 복사한다. 기존 파일이 있으면 먼저 별도로 백업한다.
+
+```powershell
+$startup = [Environment]::GetFolderPath("Startup")
+Copy-Item .\scripts\vim.ahk (Join-Path $startup "vim.ahk")
+```
 
 ## 설치 확인
 

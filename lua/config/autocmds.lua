@@ -7,10 +7,19 @@
 -- Or remove existing autocmds by their group name (which is prefixed with `lazyvim_` for the defaults)
 -- e.g. vim.api.nvim_del_augroup_by_name("lazyvim_wrap_spell")
 
-vim.api.nvim_create_autocmd("TextYankPost", {
-  callback = function()
-    if vim.v.event.operator == "y" then
-      require("vim.ui.clipboard.osc52").copy("+")(vim.v.event.regcontents)
+vim.api.nvim_create_autocmd("BufWritePre", {
+  group = vim.api.nvim_create_augroup("user_cpp_format_on_save", { clear = true }),
+  pattern = { "*.c", "*.cc", "*.cpp", "*.cxx", "*.h", "*.hh", "*.hpp", "*.hxx", "*.ipp", "*.ixx" },
+  callback = function(event)
+    if vim.g.autoformat == false or vim.b[event.buf].autoformat == false then
+      return
     end
+
+    require("conform").format({
+      bufnr = event.buf,
+      formatters = { "clang-format", "flightui-format" },
+      timeout_ms = 3000,
+      lsp_format = "never",
+    })
   end,
 })
